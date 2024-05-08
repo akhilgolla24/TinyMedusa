@@ -63,3 +63,6 @@ python -m cli --model [MODEL_NAME] [--max_steps (NUMBER_OF_MEDUSA_STEPS)]
 ---
 
 Results:
+<img width="974" alt="vicuna_results" src="https://github.com/akhilgolla24/TinyMedusa/assets/60799338/d076df06-6539-4823-aec6-5acee5cadce7">
+
+
