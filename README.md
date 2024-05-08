@@ -35,24 +35,20 @@ The code in this repository for Medusa profiling / training / implementation is 
 
 ---
 
- - Generate dataset used for medusa head training from TinyStories dataset on HuggingFace:
+### Generate dataset used for medusa head training from TinyStories dataset on HuggingFace:
 ```
 cd data_preparation
 python generate_tinystories.py
 ```
 
- - Running axolotl training script:
-```
-git clone ....
-```
 
 ### Training
-We use a the modified [axolotl](https://github.com/OpenAccess-AI-Collective/axolotl) library to manage the training process. Use this [fork](https://github.com/ctlllll/axolotl) for the training code. The major code modifications are in [`src/axolotl/utils/models.py`](https://github.com/ctlllll/axolotl/blob/main/src/axolotl/utils/models.py). Add the training config to [`examples/medusa`](https://github.com/ctlllll/axolotl/tree/main/examples/medusa).
+We use a the modified [axolotl](https://github.com/OpenAccess-AI-Collective/axolotl) library to manage the training process. Use this [fork](https://github.com/ctlllll/axolotl) for the training code.  Add the training config to [`examples/medusa`](https://github.com/ctlllll/axolotl/tree/main/examples/medusa).
 ```bash
 accelerate launch -m axolotl.cli.train examples/medusa/your_config.yml
 ```
 
- - Running Inference Client for Medusa (with profiling of inference stages):
+### Running Inference Client for Medusa (with profiling of inference stages):
 ```
 python -m cli --model [MODEL_NAME] [--max_steps (NUMBER_OF_MEDUSA_STEPS)]
 # This should open up a prompt where you can interact with the model and subsequently observe inference speeds
