@@ -1,0 +1,75 @@
+base_model: Maykeye/TinyLLama-v0
+base_model_config: Maykeye/TinyLLama-v0
+model_type: LlamaForCausalLM
+tokenizer_type: LlamaTokenizer
+is_llama_derived_model: true #true
+
+load_in_8bit: false
+load_in_4bit: false
+strict: false
+
+datasets:
+  - path: /home/ag4812/Medusa/data_preprocessing/tiny_stories_1000.json
+  # - path: 'Medusa/gpt2_data.json'
+  # - path: /home/ag4812/Medusa/gpt2_data.json
+    type: sharegpt
+dataset_prepared_path:
+val_set_size: 0.01
+output_dir: ./tiny_stories_llama_1000
+
+sequence_len: 512
+sample_packing: true
+pad_to_sequence_len: true
+
+wandb_project: medusa_test_stories_1000
+wandb_entity:
+wandb_watch:
+wandb_run_id:
+wandb_log_model:
+
+gradient_accumulation_steps: 4
+micro_batch_size: 2
+num_epochs: 1
+optimizer: adamw_bnb_8bit
+lr_scheduler: cosine
+learning_rate: 0.0005
+
+train_on_inputs: false
+group_by_length: false
+bf16: true
+fp16: false
+tf32: false
+
+gradient_checkpointing: true
+early_stopping_patience:
+resume_from_checkpoint:
+local_rank:
+logging_steps: 1
+xformers_attention:
+flash_attention: true
+
+warmup_steps: 40
+eval_steps: 40
+save_steps:
+save_total_limit: 1
+debug:
+deepspeed:
+weight_decay: 0.0
+fsdp:
+fsdp_config:
+special_tokens:
+  bos_token: "<s>"
+  eos_token: "</s>"
+  unk_token: "<unk>"
+
+medusa_num_heads: 3
+medusa_num_layers: 1
+medusa_heads_coefficient: 0.2
+medusa_decay_coefficient: 0.8
+medusa_logging: true
+medusa_scheduler: constant
+medusa_lr_multiplier: 4.0
+medusa_only_heads: true
+ddp_find_unused_parameters: true
+# Stage 1: only train the medusa heads
+# Stage 2: train the whole model
