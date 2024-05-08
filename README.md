@@ -11,7 +11,9 @@ We implemented Medusa Inference Accelaration on small models and profiled infere
 
 Repository Outline:
 
-...
+- data_prepartion
+   -  generate_tiny_stories : generates json file of data to train on
+- 
 
 ---
 Generate dataset used for medusa head training from TinyStories dataset on HuggingFace:
