@@ -9,11 +9,15 @@
 
 **Description:**
 
-Medusa is technique for accelerating inference on LLMs. It essentially involves attaching multiple residual blocks (heads) onto the last hidden layer of the language model, followed by fine-tuning.
+Medusa is a technique for accelerating inference on LLMs. It essentially involves attaching multiple residual blocks (heads) onto the last hidden layer of the language model, followed by fine-tuning.
 
-We implemented [Medusa Inference Acceleration](https://arxiv.org/abs/2401.10774) on small models and profiled various stages in the Medusa inference process to see if this inference acceleration method could work in such cases. We experimented with the [Maykeye/TinyLLama-v0](https://huggingface.co/Maykeye/TinyLLama-v0) (4.62M params) from HuggingFace. This model was trained on the [roneneldan/TinyStories dataset](https://huggingface.co/datasets/roneneldan/TinyStories), which has a small vocabulary specifically designed for training smaller language models for story generation.
+<p align="center">
+<img width="450" alt="Blah" src="https://github.com/akhilgolla24/TinyMedusa/assets/67233931/a300fc06-3f33-43d0-8a6a-3b821334c897">
+</p>
 
-The code in this repository for Medusa profiling / training / implementation is based of that of the [original authors](https://github.com/FasterDecoding/Medusa).
+We implemented [Medusa Inference Acceleration](https://arxiv.org/abs/2401.10774) (specifically, Medusa-1) on small models and profiled various stages of the Medusa inference process to see this inference acceleration method in action. We also experimented with [Maykeye/TinyLLama-v0](https://huggingface.co/Maykeye/TinyLLama-v0) (4.62M params) from HuggingFace. This model was trained on the [roneneldan/TinyStories dataset](https://huggingface.co/datasets/roneneldan/TinyStories), which has a small vocabulary specifically designed for training smaller language models on story generation tasks.
+
+The code in this repository (Medusa profiling / training / implementation) is based on that of the [original repository](https://github.com/FasterDecoding/Medusa).
 
 ---
 
@@ -21,51 +25,68 @@ The code in this repository for Medusa profiling / training / implementation is 
 
 ```
 - data_preparation
-   -  generate_tiny_stories.py : generates json file of data to train on
+   -  generate_tiny_stories.py : Generates a json file of the data we used for training a model
+
 - axolotl_training_config
-   - tiny_stories_llama_1000.yml : contains a configuration (.yml) file to train using axolotl
+   - tiny_stories_llama_1000.yml : Contains a configuration (.yml) file for training Medusa heads on a HuggingFace model using axolotl
+
 - medusa_model
-   - cli.py : runs client that asks for user input and outputs text generation w/ medusa models (+ profiling)
-   - kv_cache.py : implementation of key value cache optimmization
-   - medusa_model_profiled.py : base medusa model with profiling
-   - modeling_llama_kv.py : base Llama model with Medusa attention mask addition and key value cache optimization
-   - utils.py : utility functions (for Medusa inference)
+   - cli.py : Runs a FastChat client that asks for user input and outputs text generation w/ medusa models (+ profiling)
+   - kv_cache.py : Implementation of the key value cache optimization
+   - medusa_model_profiled.py : Medusa model definition + profiling code for the text generation phase
+   - modeling_llama_kv.py : Base Llama model with support for Medusa's attention mask and key value caching
+   - utils.py : Utility functions (used during Medusa inference)
+
 - README.md
 ```
 
 ---
 
-### Generate dataset used for medusa head training from TinyStories dataset on HuggingFace:
+Set up a python environment and install the required dependencies using `pip`. (Note: make the `transformers` version 4.34.0)
+```bash
+$ pip install -r requirements.txt
+```
+
+### Dataset generation 
+The code in this folder was used for formatting the TinyStories dataset appropriately for training Medusa heads with the axolotl library.
 ```
 cd data_preparation
 python generate_tinystories.py
 ```
 
-
 ### Training
-We use a the modified [axolotl](https://github.com/OpenAccess-AI-Collective/axolotl) library to manage the training process. Use this [fork](https://github.com/ctlllll/axolotl) for the training code.  Add the training config to [`examples/medusa`](https://github.com/ctlllll/axolotl/tree/main/examples/medusa).
+We use a fork of the [axolotl](https://github.com/OpenAccess-AI-Collective/axolotl) library modified for Medusa support to manage the training process. Use [this](https://github.com/ctlllll/axolotl) fork for the training code.  Add a training configuration (`.yml`) to [`examples/medusa`](https://github.com/ctlllll/axolotl/tree/main/examples/medusa), and run the below command (after following the normal axolotl installation process).
+
 ```bash
-accelerate launch -m axolotl.cli.train examples/medusa/your_config.yml
+$ accelerate launch -m axolotl.cli.train examples/medusa/your_config.yml
 ```
 
 ### Running Inference Client for Medusa (with profiling of inference stages):
-```
-python -m cli --model [MODEL_NAME] [--max_steps (NUMBER_OF_MEDUSA_STEPS)]
+```bash
+$ python -m cli --model [MODEL_NAME] [--max_steps (NUMBER_OF_MEDUSA_STEPS)]
 # This should open up a prompt where you can interact with the model and subsequently observe inference speeds
 # e.g. python -m cli --model FasterDecoding/medusa-1.0-vicuna-7b-v1.5
 ```
 
- - Running Inference Client for base model (directly using FastChat):
+ - Running Inference Client for base model (stored either on HuggingFace or a local directory) (directly using [FastChat](https://github.com/lm-sys/FastChat) after installation):
+```bash
+$ python -m fastchat.serve.cli --model-path [MODEL_NAME]
+# e.g. python -m fastchat.serve.cli --model-path Maykeye/TinyLLama-v0
 ```
-
-```
-
 ---
 
 ### Results:
 
-We used Weights and Biases to profile the training process. Here are our [experiments](https://wandb.ai/narenl/medusa_test_stories_1000?nw=nwusernarenl).
+**Environment Used:** GCP VM with an NVIDIA L4 32GB
 
+We used Weights & Biases to monitor training. Here are some wandb [statistics](https://wandb.ai/narenl/medusa_test_stories_1000?nw=nwusernarenl) from our training process (Medusa heads trained over TinyLLama). We've also attached some graphs depicting the top-x accuracy or loss of certain Medusa heads (the i-th head predicting the (i + 1)-th token in a possible continuation), and how they've improved throughout the training process (cosine lr scheduler).
+
+<img width="450" alt="Blah" src="https://github.com/akhilgolla24/TinyMedusa/assets/67233931/bf4ed161-c1d7-462e-bc35-1ef063e49d89">
+<img width="450" alt="Blah" src="https://github.com/akhilgolla24/TinyMedusa/assets/67233931/775416be-3b8e-422b-8890-06f382221d43">
+<img width="450" alt="Blah" src="https://github.com/akhilgolla24/TinyMedusa/assets/67233931/ecf80fd5-29c1-4f0d-a59d-fe775674f6df">
+<img width="450" alt="Blah" src="https://github.com/akhilgolla24/TinyMedusa/assets/67233931/01712fed-090f-4a59-b1ed-f55e56378755">
+
+ - Example output from profiling Medusa on vicuna-7b:
 <img width="974" alt="vicuna_results" src="https://github.com/akhilgolla24/TinyMedusa/assets/60799338/d076df06-6539-4823-aec6-5acee5cadce7">
 
 
