@@ -62,7 +62,10 @@ python -m cli --model [MODEL_NAME] [--max_steps (NUMBER_OF_MEDUSA_STEPS)]
 
 ---
 
-Results:
+### Results:
+
+We used Weights and Biases to profile the training process. Here are our [experiments](https://wandb.ai/narenl/medusa_test_stories_1000?nw=nwusernarenl).
+
 <img width="974" alt="vicuna_results" src="https://github.com/akhilgolla24/TinyMedusa/assets/60799338/d076df06-6539-4823-aec6-5acee5cadce7">
 
 
