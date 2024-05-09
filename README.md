@@ -47,12 +47,19 @@ Set up a python environment and install the required dependencies using `pip`. (
 $ pip install -r requirements.txt
 ```
 
-### Dataset generation 
+
 The code in this folder was used for formatting the TinyStories dataset appropriately for training Medusa heads with the axolotl library.
 ```
 cd data_preparation
 python generate_tinystories.py
 ```
+
+### Dataset
+We use the ShareGPT dataset, which is a subset of the Vicuna training data. It has conversations between a human and client.
+```bash
+git clone https://huggingface.co/datasets/Aeala/ShareGPT_Vicuna_unfiltered
+```
+Specifically, we use the ShareGPT_Vicuna_unfiltered/ShareGPT_V4.3_unfiltered_cleaned_split.json
 
 ### Training
 We use a fork of the [axolotl](https://github.com/OpenAccess-AI-Collective/axolotl) library modified for Medusa support to manage the training process. Use [this](https://github.com/ctlllll/axolotl) fork for the training code.  Add a training configuration (`.yml`) to [`examples/medusa`](https://github.com/ctlllll/axolotl/tree/main/examples/medusa), and run the below command (after following the normal axolotl installation process).
