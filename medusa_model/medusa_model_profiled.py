@@ -251,7 +251,7 @@ class MedusaModelABC(nn.Module):
         # return [[0], [0, 0], [1], [0, 1], [2], [0, 0, 0], [1, 0], [0, 2], [3], [0, 3], [4], [0, 4], [2, 0], [0, 5]]
         # return mc_sim_7b_63
         # Predefined attention tree structure (using top-1, top-7, followed by top-6)
-        return [[0], [0, 0], [1], [0, 1], [2], [0, 0, 0], [1, 0], [0, 2], [3], [0, 3], [4], [0, 4], [2, 0], [0, 5], [0, 0, 1], [5], [0, 6], [6], [0, 7], [0, 1, 0], [1, 1], [7], [0, 8], [0, 0, 2], [3, 0], [0, 9], [8], [9], [1, 0, 0], [0, 2, 0], [1, 2], [0, 0, 3], [4, 0], [2, 1], [0, 0, 4], [0, 0, 5], [0, 0, 0, 0], [0, 1, 1], [0, 0, 6], [0, 3, 0], [5, 0], [1, 3], [0, 0, 7], [0, 0, 8], [0, 0, 9], [6, 0], [0, 4, 0], [1, 4], [7, 0], [0, 1, 2], [2, 0, 0], [3, 1], [2, 2], [8, 0], [0, 5, 0], [1, 5], [1, 0, 1], [0, 2, 1], [9, 0], [0, 6, 0], [0, 0, 0, 1], [1, 6], [0, 7, 0]]
+        return [[0], [0, 0], [1], [0, 1], [2], [0, 0, 0], [1, 0], [0, 2], [3], [0, 3], [4], [0, 4], [2, 0], [0, 5], [0, 0, 1], [5], [0, 6], [6], [0, 7], [0, 1, 0], [1, 1], [7], [0, 8], [0, 0, 2], [3, 0], [0, 9], [8], [9], [1, 0, 0]] # [0, 2, 0], [1, 2], [0, 0, 3], [4, 0], [2, 1], [0, 0, 4], [0, 0, 5], [0, 0, 0, 0], [0, 1, 1], [0, 0, 6], [0, 3, 0], [5, 0], [1, 3], [0, 0, 7], [0, 0, 8], [0, 0, 9], [6, 0], [0, 4, 0], [1, 4], [7, 0], [0, 1, 2], [2, 0, 0], [3, 1], [2, 2], [8, 0], [0, 5, 0], [1, 5], [1, 0, 1], [0, 2, 1], [9, 0], [0, 6, 0], [0, 0, 0, 1], [1, 6], [0, 7, 0]]
 
     def medusa_generate(
         self,
@@ -394,6 +394,73 @@ class MedusaModelABC(nn.Module):
 
             if self.tokenizer.eos_token_id in input_ids[0, input_len:]:
                 break
+
+    def base_model_generate(
+        self,
+        input_ids,
+        max_steps,
+        wall_times = {'inference' : []},
+        **kwargs
+    ):
+        # batch size 1 for inference
+        assert input_ids.shape[0] == 1
+
+        input_len = input_ids.shape[1]
+        input_ids = input_ids.clone()
+
+        self.new_token_count = 0
+
+        # Initialize the past key and value states
+        if hasattr(self, "past_key_values"):
+            past_key_values = self.past_key_values
+            past_key_values_data = self.past_key_values_data
+            current_length_data = self.current_length_data
+            # Reset the past key and value states
+            current_length_data.zero_()
+        else:
+            (
+                past_key_values,
+                past_key_values_data,
+                current_length_data,
+            ) = initialize_past_key_values(self.base_model)
+            self.past_key_values = past_key_values
+            self.past_key_values_data = past_key_values_data
+            self.current_length_data = current_length_data
+
+        # pos_ids = torch.Tensor([[x + 1 for x in range(input_len)]])
+        inp_ids = input_ids.clone()
+
+        for idx in range(max_steps):
+            with timed(wall_times, 'base_inference'):
+                # get inference
+                output = torch.argmax(
+                    self.forward(
+                        input_ids=inp_ids,
+                        past_key_values=past_key_values,
+                        **kwargs,
+                    ).logits[0, -1]
+                )
+
+            output_tensor = torch.tensor([[output]], dtype=torch.int, device=input_ids.device)
+            input_ids = torch.cat(
+                (input_ids, output_tensor), dim=-1
+            )
+
+            self.new_token_count += 1
+            inp_ids = output_tensor
+            
+            yield {
+                "text": self.tokenizer.decode(
+                    input_ids[0, input_len:],
+                    skip_special_tokens=True,
+                    spaces_between_special_tokens=False,
+                    clean_up_tokenization_spaces=True,
+                )
+            }
+
+            if self.tokenizer.eos_token_id in input_ids[0, input_len:]:
+                break
+
 
 
 class MedusaModelLlama(MedusaModelABC, KVLlamaForCausalLM):

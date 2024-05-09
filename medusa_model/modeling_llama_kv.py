@@ -1060,7 +1060,7 @@ class LlamaForCausalLM(LlamaPreTrainedModel):
         else:
             logits = self.lm_head(hidden_states)
         logits = logits.float()
-        print('logit shape' + logits.shape)
+        # print('logit shape' + logits.shape)
 
         loss = None
         if labels is not None:

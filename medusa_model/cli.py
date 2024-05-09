@@ -163,17 +163,30 @@ def main(args):
                 )
 
                 # For timing Medusa output generation phases
-                wall_time = {'medusa': [], 'tree': [], 'posterior': [], 'update': [], 'init': []} 
-                model.new_token_count = 0
+                if (args.use_medusa):
+                    wall_time = {'medusa': [], 'tree': [], 'posterior': [], 'update': [], 'init': []} 
+                    model.new_token_count = 0
 
-                outputs = chatio.stream_output(
-                    model.medusa_generate(
-                        input_ids,
-                        temperature=args.temperature,
-                        max_steps=args.max_steps,
-                        wall_times=wall_time
+                    outputs = chatio.stream_output(
+                        model.medusa_generate(
+                            input_ids,
+                            temperature=args.temperature,
+                            max_steps=args.max_steps,
+                            wall_times=wall_time
+                        )
                     )
-                )
+                else:
+                    wall_time = {'base_inference' : []}
+                    model.new_token_count = 0
+
+                    outputs = chatio.stream_output(
+                        model.base_model_generate(
+                            input_ids,
+                            max_steps=args.max_steps,
+                            wall_times=wall_time
+                        )
+                    )
+                
                 conv.update_last_message(outputs.strip())
 
                 # Print time splits
@@ -182,28 +195,35 @@ def main(args):
                 def format_string(text, value, max_length):
                     value_str = "{:.3f}".format(value)
                     return f"{text:<{max_length - len(value_str)}}{value_str}"
+                
+                if (args.use_medusa):
+                    time_init = np.sum(wall_time['init'] )
+                    time_medusa = np.sum(wall_time['medusa'] )
+                    time_tree = np.sum(wall_time['tree'] )
+                    time_posterior = np.sum(wall_time['posterior'] )
+                    time_update = np.sum(wall_time['update'] )
+                    time_total = time_init + time_medusa + time_tree + time_posterior + time_update
 
-                time_init = np.sum(wall_time['init'] )
-                time_medusa = np.sum(wall_time['medusa'] )
-                time_tree = np.sum(wall_time['tree'] )
-                time_posterior = np.sum(wall_time['posterior'] )
-                time_update = np.sum(wall_time['update'] )
-                time_total = time_init + time_medusa + time_tree + time_posterior + time_update
-
-                print('='*max_length)
-                print(format_string("Wall time init: ", time_init, max_length))
-                print(format_string("Wall time medusa: ", time_medusa, max_length))
-                print(format_string("Wall time Tree: ", time_tree, max_length))
-                print(format_string("Wall time Posterior: ", time_posterior, max_length))
-                print(format_string("Wall time Update: ", time_update, max_length))
-                print('-'*max_length)
-                print(format_string("Wall time portion medusa: ", time_medusa / time_total, max_length))
-                print(format_string("Wall time portion Tree: ", time_tree / time_total, max_length))
-                print(format_string("Wall time portion Posterior: ", time_posterior / time_total, max_length))
-                print(format_string("Wall time portion Update: ", time_update / time_total, max_length))
-                print('-'*max_length)
-                print(format_string("Tokens/second: ", model.new_token_count / time_total, max_length))
-                print('='*max_length)
+                    print('='*max_length)
+                    print(format_string("Wall time init: ", time_init, max_length))
+                    print(format_string("Wall time medusa: ", time_medusa, max_length))
+                    print(format_string("Wall time Tree: ", time_tree, max_length))
+                    print(format_string("Wall time Posterior: ", time_posterior, max_length))
+                    print(format_string("Wall time Update: ", time_update, max_length))
+                    print('-'*max_length)
+                    print(format_string("Wall time portion medusa: ", time_medusa / time_total, max_length))
+                    print(format_string("Wall time portion Tree: ", time_tree / time_total, max_length))
+                    print(format_string("Wall time portion Posterior: ", time_posterior / time_total, max_length))
+                    print(format_string("Wall time portion Update: ", time_update / time_total, max_length))
+                    print('-'*max_length)
+                    print(format_string("Tokens/second: ", model.new_token_count / time_total, max_length))
+                    print('='*max_length)
+                else:
+                    time_total = np.sum(wall_time['base_inference'])
+                    print('='*max_length)
+                    print(format_string("Wall time base inference: ", time_total, max_length))
+                    print(format_string("Tokens/second: ", model.new_token_count / time_total, max_length))
+                    print('='*max_length)
 
             except KeyboardInterrupt:
                 print("stopped generation.")
@@ -223,6 +243,9 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, required=True, help="Model name or path.")
+
+    parser.add_argument("--use-medusa", action="store_true", help="Set if using Medusa acceleration")
+
     parser.add_argument(
         "--load-in-8bit", action="store_true", help="Use 8-bit quantization"
     )
