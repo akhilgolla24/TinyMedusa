@@ -1,5 +1,5 @@
-base_model: Maykeye/TinyLLama-v0
-base_model_config: Maykeye/TinyLLama-v0
+base_model: Jiayi-Pan/Tiny-Vicuna-1B
+base_model_config: Jiayi-Pan/Tiny-Vicuna-1B
 model_type: LlamaForCausalLM
 tokenizer_type: LlamaTokenizer
 is_llama_derived_model: true #true
@@ -9,19 +9,19 @@ load_in_4bit: false
 strict: false
 
 datasets:
-  - path: /home/ag4812/Medusa/data_preprocessing/tiny_stories_1000.json
+  - path: /home/ag4812/ShareGPT_Vicuna_unfiltered/ShareGPT_V4.3_unfiltered_cleaned_split.json
   # - path: 'Medusa/gpt2_data.json'
   # - path: /home/ag4812/Medusa/gpt2_data.json
     type: sharegpt
 dataset_prepared_path:
 val_set_size: 0.01
-output_dir: ./tiny_stories_llama_1000
+output_dir: ./tiny_vicuna
 
 sequence_len: 512
 sample_packing: true
 pad_to_sequence_len: true
 
-wandb_project: medusa_test_stories_1000
+wandb_project: medusa_test_tiny_vicuna
 wandb_entity:
 wandb_watch:
 wandb_run_id:
@@ -29,7 +29,7 @@ wandb_log_model:
 
 gradient_accumulation_steps: 4
 micro_batch_size: 2
-num_epochs: 1
+num_epochs: 3
 optimizer: adamw_bnb_8bit
 lr_scheduler: cosine
 learning_rate: 0.0005
