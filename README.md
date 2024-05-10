@@ -88,5 +88,3 @@ The Vicuna-1B based Medusa model performed the fastest. Both Medusa models out-p
 
  - Example output from profiling Medusa on vicuna-7b:
 <img width="974" alt="vicuna_results" src="https://github.com/akhilgolla24/TinyMedusa/assets/60799338/d076df06-6539-4823-aec6-5acee5cadce7">
-
-
